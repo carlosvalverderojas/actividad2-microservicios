@@ -4,6 +4,7 @@ import com.unir.cliente.cliente_service.elastic.ProductoDocument;
 import com.unir.cliente.cliente_service.elastic.ProductoElasticRepository;
 import com.unir.cliente.cliente_service.model.Producto;
 import com.unir.cliente.cliente_service.repository.ProductoRepository;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -13,12 +14,12 @@ import java.util.List;
 public class DataLoader implements CommandLineRunner {
 
     private final ProductoRepository productoRepository;
-    private final ProductoElasticRepository elasticRepository;
+    private final ObjectProvider<ProductoElasticRepository> elasticRepositoryProvider;
 
     public DataLoader(ProductoRepository productoRepository,
-                      ProductoElasticRepository elasticRepository) {
+                      ObjectProvider<ProductoElasticRepository> elasticRepositoryProvider) {
         this.productoRepository = productoRepository;
-        this.elasticRepository = elasticRepository;
+        this.elasticRepositoryProvider = elasticRepositoryProvider;
     }
 
     @Override
@@ -48,20 +49,34 @@ public class DataLoader implements CommandLineRunner {
             System.out.println("Productos insertados en H2: " + productoRepository.count());
         }
 
-        // 2) Reindexar en Elasticsearch desde H2
-        elasticRepository.deleteAll();
+        // 2) Indexar en Elasticsearch SOLO si el repositorio existe (local/Docker)
+        ProductoElasticRepository elasticRepository = elasticRepositoryProvider.getIfAvailable();
 
-        List<Producto> lista = productoRepository.findAll();
-        for (Producto p : lista) {
-            ProductoDocument doc = new ProductoDocument(
-                    p.getId(),
-                    p.getNombre(),
-                    p.getDescripcion(),
-                    p.getPrecio()
-            );
-            elasticRepository.save(doc);
+        if (elasticRepository == null) {
+            // Esto pasará en Render cuando uses profile "prod" y excluyas auto-config ES
+            System.out.println("ℹProductoElasticRepository no disponible (prod). No se indexa en Elasticsearch.");
+            return;
         }
 
-        System.out.println("Productos indexados en Elasticsearch: " + lista.size());
+        // 3) Reindexar en Elasticsearch desde H2 (sin tumbar la app si ES falla)
+        try {
+            elasticRepository.deleteAll();
+
+            List<Producto> lista = productoRepository.findAll();
+            for (Producto p : lista) {
+                ProductoDocument doc = new ProductoDocument(
+                        p.getId(),
+                        p.getNombre(),
+                        p.getDescripcion(),
+                        p.getPrecio()
+                );
+                elasticRepository.save(doc);
+            }
+
+            System.out.println("Productos indexados en Elasticsearch: " + lista.size());
+
+        } catch (Exception e) {
+            System.out.println("Elasticsearch no disponible, continúo sin indexar. Motivo: " + e.getMessage());
+        }
     }
 }
