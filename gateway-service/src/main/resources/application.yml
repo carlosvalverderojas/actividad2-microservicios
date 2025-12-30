@@ -1,0 +1,40 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: gateway-service
+
+  cloud:
+    gateway:
+      routes:
+        - id: cliente-service
+          # Si existe CLIENTE_SERVICE_URL (Render), úsala
+          # Si NO existe (Docker/Eureka), usa lb://CLIENTE-SERVICE
+          uri: ${CLIENTE_SERVICE_URL:lb://CLIENTE-SERVICE}
+          predicates:
+            - Path=/cliente/**
+          filters:
+            - StripPrefix=1
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "https://gilded-palmier-a5bd10.netlify.app"
+              - "http://localhost:5173"
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://eureka-server:8761/eureka}

@@ -1,0 +1,60 @@
+services:
+
+  eureka-server:
+    build: ./eureka-server
+    image: eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    restart: always
+    networks:
+      - actividad2-net
+
+  cliente-service:
+    build: ./cliente-service
+    image: cliente-service:latest
+    container_name: cliente-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - elasticsearch
+    restart: always
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - app.elasticsearch.url=http://elasticsearch:9200
+    networks:
+      - actividad2-net
+
+  gateway-service:
+    build: ./gateway-service
+    image: gateway-service:latest
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+      - cliente-service
+    restart: always
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+    networks:
+      - actividad2-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    networks:
+      - actividad2-net
+    restart: always
+
+networks:
+  actividad2-net:
+    driver: bridge
+
