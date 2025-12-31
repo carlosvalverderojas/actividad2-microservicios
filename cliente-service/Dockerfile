@@ -8,6 +8,9 @@ COPY mvnw.cmd mvnw.cmd
 COPY .mvn .mvn
 COPY pom.xml pom.xml
 
+# IMPORTANTE: dar permiso de ejecución al wrapper (Render/Linux)
+RUN chmod +x mvnw
+
 # Descarga dependencias (cache)
 RUN ./mvnw -DskipTests dependency:go-offline
 

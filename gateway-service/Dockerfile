@@ -7,8 +7,9 @@ WORKDIR /app
 # Copiamos el JAR generado por Maven
 COPY target/*.jar app.jar
 
-# Puerto del gateway
+# Render usa PORT dinámico. Local seguirá usando 8080 si no hay PORT.
+ENV PORT=8080
 EXPOSE 8080
 
-# Arranque del gateway
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Arranque del gateway usando el puerto dinámico
+ENTRYPOINT ["sh","-c","java -jar app.jar --server.port=${PORT}"]
