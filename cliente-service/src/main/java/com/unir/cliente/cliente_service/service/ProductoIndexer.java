@@ -5,10 +5,12 @@ import com.unir.cliente.cliente_service.elastic.ProductoElasticRepository;
 import com.unir.cliente.cliente_service.model.Producto;
 import com.unir.cliente.cliente_service.repository.ProductoRepository;
 import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Profile("!render") // En Render NO se crea este bean
 @Component
 public class ProductoIndexer {
 
@@ -16,7 +18,7 @@ public class ProductoIndexer {
     private final ProductoElasticRepository elasticRepository;
 
     public ProductoIndexer(ProductoRepository productoRepository,
-                            ProductoElasticRepository elasticRepository) {
+                           ProductoElasticRepository elasticRepository) {
         this.productoRepository = productoRepository;
         this.elasticRepository = elasticRepository;
     }
