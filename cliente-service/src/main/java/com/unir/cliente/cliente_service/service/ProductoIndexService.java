@@ -8,15 +8,16 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ProductoIndexService {
 
     private final ProductoRepository productoRepository;
-    private final ProductoElasticRepository productoElasticRepository;
+    private final Optional<ProductoElasticRepository> productoElasticRepository;
 
     public ProductoIndexService(ProductoRepository productoRepository,
-                                ProductoElasticRepository productoElasticRepository) {
+                                Optional<ProductoElasticRepository> productoElasticRepository) {
         this.productoRepository = productoRepository;
         this.productoElasticRepository = productoElasticRepository;
     }
@@ -25,7 +26,16 @@ public class ProductoIndexService {
     @PostConstruct
     public void indexarProductos() {
 
-        productoElasticRepository.deleteAll();
+        // En Render (sin Elastic): no hace nada y NO falla
+        if (productoElasticRepository.isEmpty()) {
+            System.out.println("Elasticsearch no disponible. Se omite indexación inicial.");
+            return;
+        }
+
+        //En local/Docker (con Elastic): funciona igual que antes
+        ProductoElasticRepository repo = productoElasticRepository.get();
+
+        repo.deleteAll();
 
         List<Producto> productos = productoRepository.findAll();
 
@@ -36,7 +46,7 @@ public class ProductoIndexService {
                     producto.getDescripcion(),
                     producto.getPrecio()
             );
-            productoElasticRepository.save(doc);
+            repo.save(doc);
         });
 
         System.out.println("Productos indexados en Elasticsearch: " + productos.size());
