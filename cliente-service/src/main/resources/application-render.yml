@@ -9,3 +9,11 @@ spring:
     elasticsearch:
       repositories:
         enabled: false
+
+eureka:
+  client:
+    enabled: true
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
