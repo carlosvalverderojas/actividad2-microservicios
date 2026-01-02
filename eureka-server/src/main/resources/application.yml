@@ -1,5 +1,5 @@
 server:
-  port: 8761   # Puerto donde se ejecuta Eureka
+  port: ${PORT:8761}   # Render usa PORT dinámico, local cae en 8761
 
 spring:
   application:
@@ -7,7 +7,7 @@ spring:
 
 eureka:
   client:
-    register-with-eureka: false   # Eureka no se registra a sí mismo
-    fetch-registry: false         # No necesita buscar otros servicios
+    register-with-eureka: false
+    fetch-registry: false
   server:
     enable-self-preservation: false
